@@ -340,3 +340,16 @@ The bar is: **your work is clean.**
 6. Published output stays clean: clean HTML, clean CSS, clean TypeScript. No exceptions.
 7. Documentation tracks code — update [`docs/`](docs/) in the same change. Read [`docs/README.md`](docs/README.md) for orientation.
 8. Verify once at the end. Pre-existing failures from parallel sessions are not yours to fix.
+
+---
+
+## Cursor Cloud specific instructions
+
+The base image already has Bun on `PATH` (`/usr/local/bin/bun`) and the startup update script runs `bun install`, so dependencies are ready when a session begins. Standard commands are documented above and in `package.json` — this section only covers non-obvious cloud caveats.
+
+- **Runtime:** `bun` (not npm/pnpm/yarn). It is preinstalled system-wide; no manual install needed.
+- **Dev server:** `bun run dev` starts BOTH the CMS API (`:3001`) and the Vite dev server (`:5173`) as one supervised process (`scripts/dev.ts`). Open the editor at `http://localhost:5173/admin` — not `:3001`. `:3001` serves the CMS API and the published public site.
+- **Database:** with no `DATABASE_URL`, dev defaults to SQLite at `./.tmp/dev.db` — zero external services. Postgres mode (`DATABASE_URL=postgres://...`) needs Docker and is not required for normal work. For a disposable smoke-test run, isolate state: `DATABASE_URL=sqlite:./.tmp/e2e-agent.db UPLOADS_DIR=./.tmp/e2e-uploads bun run dev`.
+- **First run:** the very first visit to `/admin` shows a setup wizard (site name + owner email/password). There is no seeded account — you must create the owner before anything else.
+- **Publishing / public pages:** the editor auto-persists (no save button). Publish from the toolbar (requires re-entering the owner password), then the baked static page is served from the CMS root, e.g. `http://localhost:3001/`. Published output is plain semantic HTML.
+- **Verification gate (from repo root):** `bun run build` (`tsc -b && vite build`), `bun test`, `bun run lint`. The full `bun test` suite is large (~130s, 6600+ tests); budget time accordingly rather than assuming it hung.
